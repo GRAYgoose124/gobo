@@ -1,3 +1,4 @@
+from pathlib import Path
 import traceback
 
 import tensorflow as tf
@@ -6,6 +7,10 @@ import matplotlib.patches as patches
 
 
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name, pred_index=None):
+    # Ensure the img_array is 4D
+    img_array = tf.expand_dims(img_array, 0)
+    img_array = tf.expand_dims(img_array, -1)
+
     grad_model = tf.keras.models.Model(
         [model.inputs], [model.get_layer(last_conv_layer_name).output, model.output]
     )
@@ -68,14 +73,14 @@ def plot_board(board, moves=None):
     plt.show()
 
 
-def plot_heatmap(board, model, layer="conv2d1"):
+def plot_heatmap(board, model, layer="heatmap_target"):
     heatmap = make_gradcam_heatmap(board, model, layer)
     plt.matshow(heatmap)
     plt.gca().invert_yaxis()
     plt.show()
 
 
-def plot_board_and_heatmap_side_by_side(board, model, moves=None, layer="conv2d1"):
+def plot_bah_side_by_side(board, model, moves=None, layer="heatmap_target"):
     fig, ax = make_board_fig(board, moves)
     ax2 = ax.twinx()
     try:
@@ -84,5 +89,21 @@ def plot_board_and_heatmap_side_by_side(board, model, moves=None, layer="conv2d1
         ax2.set_yticks([])
     except ValueError:
         traceback.print_exc()
+
+    plt.show()
+
+
+def plot_bah_underlay(
+    board, model, moves=None, layer="heatmap_target", save: Path | None = None
+):
+    fig, ax = make_board_fig(board, moves)
+    try:
+        heatmap = make_gradcam_heatmap(board, model, layer)
+        ax.imshow(heatmap, alpha=0.5)
+    except ValueError:
+        traceback.print_exc()
+
+    if save:
+        plt.savefig(save)
 
     plt.show()
