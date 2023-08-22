@@ -7,49 +7,12 @@ import numpy as np
 import tensorflow as tf
 
 
-from .models import (
-    load_model_state,
-    save_model_state,
-    train_model,
-    predict_best_move,
-)
-
 from .board import GoBoard
-from .visualization import plot_bah_underlay
-
+from .game import GoGame, GoGameLibrary
+from .models.__main__ import GoModel
 from .models.gru import create_go_model
 
-
-def create_or_load_model(models_dir=Path(__file__).parents[1] / "data" / "models"):
-    # Create or load the model
-    model_loaded = False
-    active_model_dir = models_dir / str(datetime.now())
-    if models_dir.exists():
-        # see if we've saved anything of the datetime format yet..
-        saved_models = list(models_dir.glob("*????-??-??*"))
-        if len(saved_models):
-            active_model_dir = max(saved_models, key=os.path.getctime)
-
-            if (
-                model_loaded
-                or input(f"Load model?\t {active_model_dir}\n(Y/n): ") != "n"
-            ):
-                print("Loading...")
-                try:
-                    model = load_model_state(str(active_model_dir))
-                    model_loaded = True
-                finally:
-                    pass
-            print(f"Using directory: {active_model_dir}")
-        else:
-            print(f"No saved models found in {models_dir}")
-    else:
-        active_model_dir.mkdir(parents=True)
-
-    if not model_loaded:
-        model = create_go_model()
-
-    return (model, active_model_dir)
+from .visualization import plot_bah_underlay
 
 
 def main():
@@ -57,17 +20,21 @@ def main():
         print("\n\nNo GPU detected, training may be slow.\n\n")
 
     # Training set from some game data
-    loaded_gamedata = GoBoard.load_go_gamedata(Path(__file__).parents[1] / "data/9x9")
+    loaded_gamedata = GoGameLibrary.load_go_gamedata(
+        Path(__file__).parents[1] / "data/9x9"
+    )
     train_X = np.vstack([data[0] for data in loaded_gamedata])
     train_Y = np.vstack([data[1] for data in loaded_gamedata])
 
-    model, save_dir = create_or_load_model()
+    model, save_dir = GoModel.create_or_load(
+        models_dir=Path(__file__).parents[1] / "data" / "models",
+        model_builder=create_go_model,
+    )
 
-    train_model(
-        model,
+    model.train(
         train_X,
         train_Y,
-        step_cb=lambda: save_model_state(model, save_dir),
+        step_cb=lambda: model.save(save_dir),
     )
 
     board = play_game(model)

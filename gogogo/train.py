@@ -3,6 +3,9 @@ import numpy as np
 from gogogo.board import GoMoveError
 
 
+from .scoring import TerritoryCountScorer
+
+
 class GoTrainer:
     """Uses a go scorer to train a model to play go"""
 

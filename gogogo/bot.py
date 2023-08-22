@@ -11,7 +11,7 @@ class GoBot:
     def predict_best_move(self, board=None):
         return self.predict_top_moves(board, top=1)[0]
 
-    def predict_top_moves(self, board=None, top=3):
+    def predict_top_moves(self, top=3):
         board = board or self.game.board
 
         # Reshape the board to match the input shape of the model

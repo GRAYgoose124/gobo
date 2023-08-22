@@ -10,9 +10,8 @@ class GoGameSpaceOccupied(GoMoveError):
 
 
 class GoBoard:
-    def __init__(self, model=None):
-        self.board = np.zeros((9, 9), dtype=int)
-        self.model = model
+    def __init__(self, board: np.array = None):
+        self.board = board or np.zeros((9, 9), dtype=int)
 
     def apply_move(self, move, player):
         if self.board[move[0]][move[1]] != 0:
