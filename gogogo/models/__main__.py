@@ -19,9 +19,11 @@ class GoModel:
     @staticmethod
     def load(save_dir):
         return GoModel(keras.models.load_model(save_dir))
-
-    def train(self, train_X, train_Y, step_cb=None):
-        total_epochs, epochs_between_cbs = 1000, 75
+    
+    def predict(self, input_board):
+        return self.model.predict(input_board)
+    
+    def train(self, train_X, train_Y, step_cb=None, total_epochs=10, epochs_between_cbs=75):
         eras = int(total_epochs / epochs_between_cbs)
         try:
             for i in range(eras):

@@ -50,6 +50,7 @@ def make_board_fig(board, moves=None):
     # Highlight the best move position
     while moves:
         move = moves.pop()
+        print(move)
         ax.add_patch(
             patches.Circle((move[1], 8 - move[0]), 0.4, facecolor="red", alpha=0.3)
         )

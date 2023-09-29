@@ -11,17 +11,22 @@ class GoGameSpaceOccupied(GoMoveError):
 
 class GoBoard:
     def __init__(self, board: np.array = None):
-        self.board = board or np.zeros((9, 9), dtype=int)
+        self._np_board = board or np.zeros((9, 9), dtype=int)
+
+    @property
+    def raw(self):
+        """Returns the raw numpy array representing the board."""
+        return self._np_board
 
     def apply_move(self, move, player):
-        if self.board[move[0]][move[1]] != 0:
+        if self._np_board[move[0]][move[1]] != 0:
             raise GoGameSpaceOccupied
 
-        self.board[move] = player
+        self._np_board[move] = player
 
         for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
             x, y = move[0] + dx, move[1] + dy
-            if 0 <= x < 9 and 0 <= y < 9 and self.board[x, y] == -player:
+            if 0 <= x < 9 and 0 <= y < 9 and self._np_board[x, y] == -player:
                 if self.is_captured((x, y), player):
                     self.remove_group((x, y))
 
@@ -36,10 +41,10 @@ class GoBoard:
             for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
                 nx, ny = x + dx, y + dy
                 if 0 <= nx < 9 and 0 <= ny < 9:
-                    if self.board[nx, ny] == 0:
+                    if self._np_board[nx, ny] == 0:
                         return False
                     if (
-                        self.board[nx, ny] == self.board[start[0], start[1]]
+                        self._np_board[nx, ny] == self._np_board[start[0], start[1]]
                         and (nx, ny) not in visited
                     ):
                         stack.append((nx, ny))
@@ -56,18 +61,18 @@ class GoBoard:
                 if (
                     0 <= nx < 9
                     and 0 <= ny < 9
-                    and self.board[nx, ny] == self.board[start[0], start[1]]
+                    and self._np_board[nx, ny] == self._np_board[start[0], start[1]]
                     and (nx, ny) not in to_remove
                 ):
                     stack.append((nx, ny))
         for x, y in to_remove:
-            self.board[x, y] = 0
+            self._np_board[x, y] = 0
 
     def get_legal_moves(self, player):
         legal_moves = []
         for x in range(9):
             for y in range(9):
-                if self.board[x, y] == 0:
+                if self._np_board[x, y] == 0:
                     if not self.is_captured((x, y), player):
                         legal_moves.append((x, y))
         return legal_moves

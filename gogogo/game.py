@@ -6,20 +6,27 @@ from pysgf import SGF
 
 from gogogo.board import GoBoard
 from gogogo.bot import GoBot
-from gogogo.models.gru import create_go_model as gomod
+from gogogo.models.basic import create_go_model
 
 
 class GoGame:
-    def __init__(self):
+    def __init__(self, model=None, model2=None, SAME_MODEL=True):
         self.board = GoBoard()
         self.data = {}
         self.sgf_file = None
         self.sgf_root = None
 
-        self.model = gomod()
+        self.model = model
+        self.model2 = model if SAME_MODEL and model else model2
+
+        if not self.model:
+            self.model = create_go_model()
+        if not self.model2:
+            self.model2 = create_go_model()
+
         self.players: tuple[GoBot, GoBot] = (
             GoBot(-1, self, self.model),
-            GoBot(1, self, self.model),
+            GoBot(1, self, self.model2),
         )
 
     @staticmethod
@@ -58,13 +65,15 @@ class GoGame:
                 current_player = 1 if move.player == "B" else -1
                 game.board.apply_move((x, y), current_player)
                 if cache_all_states:
-                    board_states.append(game.board.board.copy())
+                    board_states.append(game.board._np_board.copy())
             node = node.children[0]
 
         game.data = {
             "board_states": board_states,
             "winner": game.sgf_root.get_property("RE"),
         }
+
+        return game
 
 
 class GoGameLibrary:
@@ -76,6 +85,18 @@ class GoGameLibrary:
         else:
             self.games = []
 
+    def __len__(self):
+        return len(self.games)
+    
+    def __getitem__(self, key):
+        return self.games[key]
+    
+    def __iter__(self):
+        return iter(self.games)
+    
+    def __next__(self):
+        return next(self.games)
+
     @staticmethod
     def load_go_gamedata(sgf_games_dir):
         game_files = list(sgf_games_dir.glob("**/*.sgf"))
@@ -86,9 +107,9 @@ class GoGameLibrary:
         for i in range(total):
             try:
                 game_data = GoGame.load_game_data_from_sgf(game_files[i])
+                loaded_gamedata.append(game_data)
             except (TypeError, IndexError):
                 failures += 1
-            loaded_gamedata.extend(game_data)
 
         print(f"Total games: {total}")
         print(f"load failures: {failures}")
